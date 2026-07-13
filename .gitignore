@@ -1,0 +1,10 @@
+venv/
+__pycache__/
+*.pyc
+.env
+.env.*
+inmuebles.db
+debug_*.py
+debug_*.html
+*.png
+*.log

@@ -10,13 +10,15 @@ def clean_price(price_str):
     numbers = re.sub(r'[^\d]', '', price_str)
     return int(numbers) if numbers else 0
 
-def scrape_metrocuadrado(filtros):
-    # Ya incluimos el rango de precio directamente en la URL para que MetroCuadrado lo filtre desde su backend
-    url = f"https://www.metrocuadrado.com/apartamento/arriendo/cali/?precio-desde={filtros['precio_min']}&precio-hasta={filtros['precio_max']}"
+def scrape_elpais(filtros):
+    # Ya incluimos el filtro de la página (apartamentos en alquiler en Cali)
+    # Lamentablemente, el filtro de precios de FincaRaiz El Pais podría requerir parámetros complejos o interactuar.
+    # Por ahora, extraemos y filtramos en código.
+    url = "https://fincaraiz.elpais.com.co/avisos/alquiler/apartamentos"
     
     inmuebles = []
     
-    print(f"Iniciando scraper para Metrocuadrado: {url}")
+    print(f"Iniciando scraper para El Pais: {url}")
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
         page = browser.new_page()
@@ -29,44 +31,32 @@ def scrape_metrocuadrado(filtros):
             html = page.content()
             soup = BeautifulSoup(html, 'html.parser')
             
-            # Buscamos todos los contenedores de tarjetas, Metrocuadrado suele usar ul > li
-            # O simplemente buscamos los enlaces de las propiedades
-            links = soup.find_all('a')
+            articles = soup.find_all('article')
             
             procesados = set()
-            for link in links:
-                if len(inmuebles) >= 20: # Límite MVP
+            for article in articles:
+                if len(inmuebles) >= 20:
                     break
                     
-                href = link.get('href')
-                if not href or '/inmueble/' not in href.lower() or 'arriendo-apartamento' not in href.lower():
+                link = article.find('a')
+                if not link:
                     continue
                     
-                final_link = href if href.startswith('http') else 'https://www.metrocuadrado.com' + href
-                
-                # Quitar parámetros de tracking para el procesados y el ID
+                href = link.get('href')
+                if not href or '/aviso/' not in href.lower():
+                    continue
+                    
+                final_link = href if href.startswith('http') else 'https://fincaraiz.elpais.com.co' + href
                 clean_href = final_link.split('?')[0]
                 if clean_href in procesados:
                     continue
                     
-                # Extraemos todo el texto dentro del link, o subimos un par de niveles si es muy pobre
-                text_content = link.get_text(separator=' ', strip=True)
-                if '$' not in text_content:
-                    parent = link.parent
-                    levels = 0
-                    while parent and parent.name != 'body' and levels < 4: # Subir máximo 4 niveles para agarrar la tarjeta
-                        text_content = parent.get_text(separator=' ', strip=True)
-                        if '$' in text_content:
-                            break
-                        parent = parent.parent
-                        levels += 1
-                        
+                text_content = article.get_text(separator=' ', strip=True)
                 if '$' not in text_content:
                     continue
                     
                 procesados.add(clean_href)
                 
-                # Validar el precio (ahora que es individual por tarjeta)
                 precio_match = re.search(r'\$\s?[\d\.,]+', text_content)
                 if not precio_match:
                     continue
@@ -74,7 +64,7 @@ def scrape_metrocuadrado(filtros):
                 precio_str = precio_match.group(0)
                 precio_num = clean_price(precio_str)
                 
-                # Doble validación: descartar lo que rompa el presupuesto
+                # Descartar lo que rompa el presupuesto
                 if precio_num == 0 or precio_num < filtros['precio_min'] or precio_num > filtros['precio_max']:
                     continue
                     
@@ -106,20 +96,20 @@ def scrape_metrocuadrado(filtros):
                 if es_recomendado:
                     titulo = f"⭐ [ZONA RECOMENDADA] {titulo}"
                     
-                id_inmueble = clean_href.split('/')[-2] if clean_href.endswith('/') else clean_href.split('/')[-1]
+                id_inmueble = clean_href.split('-')[-1]
                 
                 inmuebles.append({
-                    'id': f"mc-{id_inmueble}",
+                    'id': f"elpais-{id_inmueble}",
                     'title': titulo,
                     'price': precio_str,
                     'url': final_link,
-                    'source': 'MetroCuadrado',
+                    'source': 'El Pais',
                     'is_agency': 'inmobiliaria' in text_clean or 'constructora' in text_clean,
-                    'phone': 'Ver link en MetroCuadrado'
+                    'phone': 'Ver link en El Pais'
                 })
                 
         except Exception as e:
-            print(f"Error scraping Metrocuadrado: {e}")
+            print(f"Error scraping El Pais: {e}")
         finally:
             browser.close()
             

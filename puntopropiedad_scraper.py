@@ -10,13 +10,13 @@ def clean_price(price_str):
     numbers = re.sub(r'[^\d]', '', price_str)
     return int(numbers) if numbers else 0
 
-def scrape_ciencuadras(filtros):
-    # La URL ya tiene los filtros de precio incluidos para CienCuadras
-    url = f"https://www.ciencuadras.com/arriendo/cali?precioDesde={filtros['precio_min']}&precioHasta={filtros['precio_max']}"
+def scrape_puntopropiedad(filtros):
+    # La página no permite parámetros sencillos en la URL para precio, por lo que extraemos y filtramos
+    url = "https://www.puntopropiedad.com/arriendo/apartamentos/cali"
     
     inmuebles = []
     
-    print(f"Iniciando scraper para CienCuadras: {url}")
+    print(f"Iniciando scraper para PuntoPropiedad: {url}")
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
         page = browser.new_page()
@@ -24,68 +24,60 @@ def scrape_ciencuadras(filtros):
         
         try:
             page.goto(url, wait_until="domcontentloaded")
-            time.sleep(6) # Dar tiempo a que cargue
+            time.sleep(6) # Dar tiempo a que el framework renderice
             
             html = page.content()
             soup = BeautifulSoup(html, 'html.parser')
             
-            # Buscamos todos los enlaces de las propiedades
             links = soup.find_all('a')
             
             procesados = set()
             for link in links:
-                if len(inmuebles) >= 20: # Límite MVP
+                if len(inmuebles) >= 20:
                     break
                     
                 href = link.get('href')
                 if not href or '/inmueble/' not in href.lower():
                     continue
                     
-                final_link = href if href.startswith('http') else 'https://www.ciencuadras.com' + href
-                
-                # Quitar parámetros de tracking para el procesados y el ID
+                final_link = href if href.startswith('http') else 'https://www.puntopropiedad.com' + href
                 clean_href = final_link.split('?')[0]
+                
                 if clean_href in procesados:
                     continue
                     
-                # Extraemos todo el texto
                 text_content = link.get_text(separator=' ', strip=True)
                 
-                # Si el enlace es solo de imagen (sin $) buscamos el padre
-                if '$' not in text_content:
+                # Buscar en los padres si no hay texto o precio (a veces los links son imágenes)
+                if '$' not in text_content and 'cop' not in text_content.lower():
                     parent = link.parent
                     levels = 0
                     while parent and parent.name != 'body' and levels < 5:
                         text_content = parent.get_text(separator=' ', strip=True)
-                        if '$' in text_content:
+                        if '$' in text_content or 'cop' in text_content.lower():
                             break
                         parent = parent.parent
                         levels += 1
                         
-                if '$' not in text_content:
+                if '$' not in text_content and 'cop' not in text_content.lower():
                     continue
                     
                 procesados.add(clean_href)
                 
-                precio_match = re.search(r'\$\s?[\d\.,]+', text_content)
+                # Extraer un número de al menos 5 dígitos/caracteres para el precio
+                precio_match = re.search(r'([\d\.,]{5,})', text_content)
                 if not precio_match:
                     continue
                     
-                precio_str = precio_match.group(0)
+                precio_str = precio_match.group(1)
                 precio_num = clean_price(precio_str)
                 
-                # Descartar lo que rompa el presupuesto (a veces meten sugeridos más caros)
+                # Filtrar si no cumple con los precios
                 if precio_num == 0 or precio_num < filtros['precio_min'] or precio_num > filtros['precio_max']:
                     continue
                     
                 text_clean = clean_text(text_content)
                 href_lower = clean_href.lower()
-                
-                # 0. Filtro estricto de Tipo de Inmueble (Solo Aptos, Casas o Apartaestudios)
-                if 'apartamento' not in text_clean and 'casa' not in text_clean and 'apartaestudio' not in text_clean:
-                    continue
-                if 'local' in text_clean or 'oficina' in text_clean or 'bodega' in text_clean:
-                    continue
                 
                 # 1. Filtro de exclusión
                 omitir = False
@@ -99,7 +91,7 @@ def scrape_ciencuadras(filtros):
                     
                 # 2. Recomendados
                 es_recomendado = False
-                barrio_encontrado = "No especificado"
+                barrio_encontrado = ""
                 for recomendado in filtros['barrios_recomendados']:
                     recomendado_norm = clean_text(recomendado)
                     if recomendado_norm in text_clean or recomendado_norm.replace(' ', '-') in href_lower:
@@ -107,38 +99,25 @@ def scrape_ciencuadras(filtros):
                         barrio_encontrado = recomendado
                         break
                         
-                # Inferir el barrio de la URL si no está en recomendados
-                if barrio_encontrado == "No especificado" and '-en-' in clean_href:
-                    partes_url = clean_href.split('-en-')[-1].split('-cali')[0]
-                    barrio_encontrado = partes_url.replace('-', ' ').title()
-                
-                # 3. Tipo de inmueble
-                tipo_inm = "Apartamento"
-                if 'casa' in text_clean:
-                    tipo_inm = "Casa"
-                elif 'apartaestudio' in text_clean:
-                    tipo_inm = "Apartaestudio"
-                
-                titulo = f"{tipo_inm} en {barrio_encontrado}"
+                # 3. Título limpio
+                titulo = f"Apto en {barrio_encontrado}" if barrio_encontrado else "Apartamento en Arriendo"
                 if es_recomendado:
-                    titulo = f"⭐ {titulo}"
+                    titulo = f"⭐ [ZONA RECOMENDADA] {titulo}"
                     
-                id_inmueble = clean_href.split('-')[-1] if '-' in clean_href else clean_href.split('/')[-1]
+                id_inmueble = clean_href.split('/')[-1]
                 
                 inmuebles.append({
-                    'id': f"cc-{id_inmueble}",
+                    'id': f"pp-{id_inmueble[:20]}", # Acortamos un poco el ID por seguridad
                     'title': titulo,
-                    'price': precio_str,
+                    'price': f"${precio_str}",
                     'url': final_link,
-                    'tipo': tipo_inm,
-                    'barrio': barrio_encontrado,
-                    'source': 'CienCuadras',
-                    'is_agency': True,
-                    'phone': 'Ver link'
+                    'source': 'PuntoPropiedad',
+                    'is_agency': 'inmobiliaria' in text_clean or 'constructora' in text_clean,
+                    'phone': 'Ver link en PuntoPropiedad'
                 })
                 
         except Exception as e:
-            print(f"Error scraping CienCuadras: {e}")
+            print(f"Error scraping PuntoPropiedad: {e}")
         finally:
             browser.close()
             

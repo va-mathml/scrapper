@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inmuebles Hub</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <!-- Supabase JS Client -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+    <div class="app-container">
+        <header class="header">
+            <div class="header-content">
+                <h1>Inmuebles Hub</h1>
+                <p class="subtitle">Tus hallazgos recientes, limpios y organizados.</p>
+            </div>
+            <div class="stats">
+                <span class="stat-badge" id="total-count">0 inmuebles</span>
+            </div>
+        </header>
+
+        <main>
+            <div id="loader" class="loader-container">
+                <div class="spinner"></div>
+                <p>Cargando inmuebles...</p>
+            </div>
+
+            <div id="inmuebles-grid" class="grid hidden">
+                <!-- Cards will be injected here by JS -->
+            </div>
+            
+            <div id="empty-state" class="empty-state hidden">
+                <h2>No hay inmuebles disponibles</h2>
+                <p>El bot no ha encontrado nada nuevo o ya descartaste todos.</p>
+            </div>
+        </main>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

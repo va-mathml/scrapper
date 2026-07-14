@@ -6,5 +6,7 @@ __pycache__/
 inmuebles.db
 debug_*.py
 debug_*.html
+debug.html
+mc.html
 *.png
 *.log

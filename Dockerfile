@@ -15,4 +15,4 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 
 # El comando por defecto cuando la máquina encienda será correr el bot
-CMD ["python", "main.py"]
+CMD ["python", "-u", "main.py"]

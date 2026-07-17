@@ -119,14 +119,7 @@ def scrape_arriendo_com(filtros):
                         break
                 if omitir:
                     continue
-                    
-                # Filtro Estricto Adicional
-                full_text = clean_text(card.get_text(separator=' ', strip=True))
-                if 'unidad' not in full_text and 'conjunto' not in full_text and 'residencia' not in full_text:
-                    continue
-                if 'apartamento' not in full_text and 'apto' not in full_text:
-                    continue
-                    
+                
                 # 6. Verificar si es barrio recomendado
                 es_recomendado = False
                 for recomendado in filtros['barrios_recomendados']:

@@ -14,7 +14,7 @@ def main():
     init_db()
     
     filtros = {
-        'precio_min': int(os.getenv('PRECIO_MIN', 700000)),
+        'precio_min': int(os.getenv('PRECIO_MIN', 850000)),
         'precio_max': int(os.getenv('PRECIO_MAX', 1200000)),
         'barrios_recomendados': [],
         'barrios_excluidos': [

@@ -71,3 +71,9 @@ Si alguna vez este proyecto debe crecer, estas son las rutas a tomar:
   1. Se actualizó `main.py` para inyectar "Ciudad Pacifica" en el set de `barrios_excluidos`.
   2. Se creó e inyectó de forma automatizada mediante un script (`apply_filters.py`) un bloque de filtrado estricto en los 6 scrapers. Este filtro valida la presencia de palabras clave (`'piscina'`, `'unidad' o 'conjunto'`, y `'apartamento' o 'apto'`) en el texto procesado por cada plataforma, descartando todo lo que no concuerde con la solicitud del usuario.
   3. Se diseñó el script `run_at_8.py`, el cual corre como tarea en segundo plano e introduce un `time.sleep()` dinámico calculando la diferencia en segundos entre el tiempo actual y las 20:00 (8:00 PM), ejecutando `main.py` de forma controlada sin perder el historial almacenado en `inmuebles.db`.
+
+
+### 3.5. El Peligro de los Filtros de Texto Estrictos en Tarjetas de Resumen
+* **Problema:** Se intentó filtrar inmuebles exigiendo que la palabra 'piscina' o 'unidad/conjunto' estuviera presente en el texto extraído por los scrapers. Esto resultó en **0 inmuebles encontrados**.
+* **Análisis:** Los scrapers operan sobre las 'tarjetas de resumen' o pre-visualizaciones en las páginas de búsqueda, no sobre el detalle completo del inmueble. Las inmobiliarias rara vez incluyen palabras específicas de amenidades (como 'piscina' o 'conjunto') en la descripción corta (ej. 'Hermoso apto al sur, 3 habs, 2 baños'). Exigir estas palabras descarta el 100% de los resultados válidos que solo revelan sus características al dar clic.
+* **Solución:** Relajar los filtros. Eliminar requerimientos de palabras clave específicas y depender únicamente del precio, la ubicación (barrios) y el escrutinio visual humano posterior. Un modelo de *alto recall* es preferible en estas etapas iniciales del scraping, dejando la precisión fina al usuario o a scrapers más profundos (y lentos).

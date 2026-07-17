@@ -91,6 +91,12 @@ def scrape_metrocuadrado(filtros):
                 if omitir:
                     continue
                     
+                # Filtro Estricto Adicional: Piscina, Unidad Residencial y Apartamento
+                if 'piscina' not in text_clean:
+                    continue
+                                if 'apartamento' not in text_clean and 'apto' not in text_clean:
+                    continue
+                    
                 # 2. Recomendados
                 es_recomendado = False
                 barrio_encontrado = ""

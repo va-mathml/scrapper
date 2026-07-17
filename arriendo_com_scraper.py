@@ -119,6 +119,13 @@ def scrape_arriendo_com(filtros):
                         break
                 if omitir:
                     continue
+                    
+                # Filtro Estricto Adicional: Piscina, Unidad Residencial y Apartamento
+                full_text = clean_text(card.get_text(separator=' ', strip=True))
+                if 'piscina' not in full_text:
+                    continue
+                                if 'apartamento' not in full_text and 'apto' not in full_text:
+                    continue
                 
                 # 6. Verificar si es barrio recomendado
                 es_recomendado = False

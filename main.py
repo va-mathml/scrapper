@@ -23,7 +23,7 @@ def main():
             'Potrero Grande', 'Decepaz', 'Calimio', 'Llano Verde', 'Marroquin', 'Los Lagos', 
             'El Poblado', 'Diamante', 'Republica de Israel', 'Union de Vivienda', 'Charco Azul', 
             'Alfonso Bonilla Aragon', 'Puerto Mallarino', 'Andres Sanin', 'Siete de Agosto',
-            'Siloe', 'Terron Colorado', 'Melendez'
+            'Siloe', 'Terron Colorado', 'Melendez', 'Ciudad Pacifica'
         ]
     }
     

@@ -1,6 +1,10 @@
 import sqlite3
 import os
-from supabase import create_client, Client
+try:
+    from supabase import create_client, Client
+except ImportError:
+    create_client = None
+    Client = None
 from dotenv import load_dotenv
 
 load_dotenv()

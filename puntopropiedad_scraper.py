@@ -89,8 +89,8 @@ def scrape_puntopropiedad(filtros):
                 if omitir:
                     continue
                     
-                # Filtro Estricto Adicional: Piscina, Unidad Residencial y Apartamento
-                if 'piscina' not in text_clean:
+                # Filtro Estricto Adicional
+                if 'unidad' not in text_clean and 'conjunto' not in text_clean and 'residencia' not in text_clean:
                     continue
                 if 'apartamento' not in text_clean and 'apto' not in text_clean:
                     continue
